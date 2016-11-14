@@ -1,0 +1,25 @@
+machine:
+  services:
+    - docker
+  python:
+    version: 2.7.10
+dependencies:
+  pre:
+    - pip install awsebcli
+deployment:
+  production:
+    branch: master
+    commands:
+      - mkdir ~/.docker
+      - aws s3 cp s3://$S3_CONFIG_BUCKET/.docker/config.json ~/.docker/config.json
+      - docker -v
+      - docker build -t "$DOCKER_HUB_ACCT_IMG:$CIRCLE_BUILD_NUM" .
+      - docker push "$DOCKER_HUB_ACCT_IMG:$CIRCLE_BUILD_NUM"
+      - sed -i'' -e "s;%BUILD_NUM%;$CIRCLE_BUILD_NUM;g" ./.deploy/Dockerrun.aws.json
+      - sed -i'' -e "s;%DOCKER_HUB_ACCT_IMG%;$DOCKER_HUB_ACCT_IMG;g" ./.deploy/Dockerrun.aws.json
+      - sed -i'' -e "s;%S3_CONFIG_BUCKET%;$S3_CONFIG_BUCKET;g" ./.deploy/Dockerrun.aws.json
+      - eb --version
+      - cd .deploy && eb init $EB_APP_NAME -v -p Docker -r $EB_REGION:
+          timeout: 1200
+      - cd .deploy && eb create $EB_ENV_NAME -v -c $EB_ENV_NAME -k $EB_SSH_KEY_NAME -r $EB_REGION || eb deploy $EB_ENV_NAME -v -l $CIRCLE_BUILD_NUM:
+          timeout: 1200
