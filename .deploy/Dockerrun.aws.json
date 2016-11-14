@@ -1,5 +1,18 @@
 {
   "AWSEBDockerrunVersion": "1",
+  "Image": {
+    "Name": "%DOCKER_HUB_ACCT_IMG%:%BUILD_NUM%",
+    "Update": "true"
+  },
+  "Authentication": {
+    "Bucket": "%S3_CONFIG_BUCKET%",
+    "Key": ".dockercfg"
+  },
+  "Ports": [
+    {
+      "ContainerPort": "8002"
+    }
+  ],
   "Volumes": [
     {
       "ContainerDirectory": "/var/app",
